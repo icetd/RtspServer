@@ -2,7 +2,7 @@
 #include <RtpPacket.h>
 #include <log.h>
 #include <string.h>
-#include <stdio.h>
+#include <stdlib.h>
 #include <netinet/in.h>
 #include <strings.h>
 #include <sys/types.h>
