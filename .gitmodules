@@ -1,0 +1,3 @@
+[submodule "thirdparty/libv4l2cc"]
+	path = thirdparty/libv4l2cc
+	url = https://github.com/icetd/libv4l2cc.git
