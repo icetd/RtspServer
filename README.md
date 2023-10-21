@@ -14,6 +14,10 @@ cmake .. && make -j8
 arm64:
 Download libx264 source code compilation.
 Put the library in the corresponding position of thirdparty.
+
+git submodule update --init
+mkdir build && cd build
+cmake .. && make -j8
 ```
 
 ## config
