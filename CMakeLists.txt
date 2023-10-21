@@ -6,15 +6,15 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_BUILD_TYPE Debug)
 
 add_subdirectory(thirdparty/libv4l2cc)
+add_subdirectory(thirdparty/libjpeg-turbo)
 
-set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/inc")
+set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/src/include")
 set(SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
 
-set(X264_INC	"${CMAKE_SOURCE_DIR}/thirdparty/x264/include")
-set(X264_LIB	"${CMAKE_SOURCE_DIR}/thirdparty/x264/lib")
-set(V4L2CC_INC	"${CMAKE_SOURCE_DIR}/thirdparty/libv4l2cc/inc")
-#set(V4L2CC_LIB	"${CMAKE_SOURCE_DIR}/thirdparty/libv4l2cc/lib")
-
+set(X264_INC		"${CMAKE_SOURCE_DIR}/thirdparty/x264/include")
+set(X264_LIB		"${CMAKE_SOURCE_DIR}/thirdparty/x264/lib")
+set(V4L2CC_INC		"${CMAKE_SOURCE_DIR}/thirdparty/libv4l2cc/inc")
+set(JPEGTURBO_INC   "${CMAKE_SOURCE_DIR}/thirdparty/libjpeg-turbo")
 #message("-- find x264 lib ${X264_LIB}")
 #message("-- find x264 headfile ${X264_LIB}")
 #message("-- find v4l2cc lib ${V4L2CC_INC}")
@@ -26,12 +26,12 @@ include_directories(
 	${INCLUDE_DIR}/rtppackage
 	${INCLUDE_DIR}/rtspserver
 	${X264_INC}
-	${V4L2CC_INC}				
+	${V4L2CC_INC}
+	${JPEGTURBO_INC}
 ) 
 
 link_directories(
 		${X264_LIB}
-	#   ${V4L2CC_LIB}
 )
 
 file(GLOB_RECURSE SRC_FILE
@@ -69,4 +69,4 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${SOURCE_DIR})
 
 #===================== LINKING LIBRARIES =======================#
-target_link_libraries(${PROJECT_NAME} v4l2cc x264 pthread ${EXTRA_LIBS})
+target_link_libraries(${PROJECT_NAME} v4l2cc turbojpeg x264 pthread ${EXTRA_LIBS})
