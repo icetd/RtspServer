@@ -109,9 +109,10 @@ int X264Encoder::initialize()
  *   @param 	inbuf  YUV422 frame
  *   @param 	insize YUV422 frame size
  *   @param 	outbuf H.264 frame
+ *   @param     format YUV422 fotmat |YUY2 camera| or |YUV422 from DeCompress|
  *   @return    the size of H.264 frame
 */
-int X264Encoder::encode(uint8_t *inbuf, int insize, uint8_t *outbuf)
+int X264Encoder::encode(uint8_t *inbuf, int insize, uint8_t *outbuf, std::string &format)
 {
 	int i = 0;
 	int size = 0;
@@ -123,26 +124,31 @@ int X264Encoder::encode(uint8_t *inbuf, int insize, uint8_t *outbuf)
 
 	int is_y = 1, is_u = 1;
 	int y_index = 0, u_index = 0, v_index = 0;
+    if (format == "MJPEG") {
+        memcpy(y, inbuf, insize / 2);
+        memcpy(u, inbuf + insize / 2, insize / 4);
+        memcpy(v, inbuf + insize * 3 / 4, insize / 4);
+    } else if (format == "YUY2") {
+        for (i = 0; i < insize; ++i) {
+            if (is_y) {
+                *(y + y_index) = *(inbuf + i);
+                ++y_index;
+                is_y = 0;
+            } else {
+                if (is_u) {
+                    *(u + u_index) = *(inbuf + i);
+                    ++u_index;
+                    is_u = 0;
+                } else {
+                    *(v + v_index) = *(inbuf + i);
+                    ++v_index;
+                    is_u = 1;
+                }
+                is_y = 1;
+            }
+        }
+    }
 
-	for (i = 0; i < insize; ++i) {
-		if (is_y) {
-			*(y + y_index) = *(inbuf + i);
-			++y_index;
-			is_y = 0;
-		} else {
-			if (is_u) {
-				*(u + u_index) = *(inbuf + i);
-				++u_index;
-				is_u = 0;
-			} else {
-				*(v + v_index) = *(inbuf + i);
-				++v_index;
-				is_u = 1;
-			}
-			is_y = 1;
-		}
-	}
-	
 	pic_in->i_pts = pts;
 	pts++;
 	

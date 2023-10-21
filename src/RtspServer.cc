@@ -3,19 +3,18 @@
 #include <cstring>
 #include <iterator>
 #include <strings.h>
+#include <sstream>
 #include <unistd.h>
-#include "MThread.h"
-#include "RtpPacket.h"
-#include "log.h"
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/ip.h> 
-#include <arpa/inet.h>
-#include <x264encoder.h>
-#include <V4l2Device.h>
-#include <V4l2Capture.h>
-#include <thread>
+#include <iostream>
+#include "RtpPacket.h"
+#include "log.h"
+#include "x264encoder.h"
+#include "V4l2Device.h"
+#include "V4l2Capture.h"
+#include "DeCompress.h"
+#include "INIReader.h"
 
 
 int RtspServer::handleCmd_OPTIONS(char *result, int cseq)
@@ -94,16 +93,37 @@ int RtspServer::initialize()
 
 void RtspServer::play(char *deviceName, int clientRtpPort, int clientRtcpPort)
 {
-	const char *in_devname = deviceName;	
+	const char *in_devname = deviceName;
 	v4l2IoType ioTypeIn  = IOTYPE_MMAP;
-	int format = 0;
-	int width = 640;
-	int height = 480;
-	int fps = 30;
+    std::list<uint32_t> formatList;
+    int width;
+	int height;
+	int fps;
+    std::string format;
+    int frameSize;
 
-	V4L2DeviceParameters param(in_devname, V4L2_PIX_FMT_YUYV, width, height, fps, ioTypeIn, DEBUG);
-	V4l2Capture *videoCapture = V4l2Capture::create(param);
+    INIReader configs("./configs/config.ini");
+    if (configs.ParseError() < 0) {
+        LOG(ERROR, "read config failed.");
+        return;
+    } else {
+        width = configs.GetInteger("video", "width", 640);
+        height = configs.GetInteger("video", "height", 480);
+        fps = configs.GetInteger("video", "fps", 30);
+        format = configs.Get("video", "format", "UNKNOWN");
+        if (format == "YUY2") {
+            formatList.push_back(V4L2_PIX_FMT_YUYV);
+        } else if (format == "MJPEG") {
+            formatList.push_back(V4L2_PIX_FMT_MJPEG);
+        }
+    }
+
+    V4L2DeviceParameters param(in_devname, formatList, width, height, fps, ioTypeIn, DEBUG);
+    V4l2Capture *videoCapture = V4l2Capture::create(param);
+    DeCompress *deCompress = new DeCompress();
 	X264Encoder *encoder = new X264Encoder(width, height, X264_CSP_I422);
+    uint8_t *yuv_buf;
+    int yuv_size;
 	uint8_t *h264_buf = (uint8_t*) malloc(videoCapture->getBufferSize());
 
 	char clientIp[50];
@@ -146,9 +166,16 @@ void RtspServer::play(char *deviceName, int clientRtpPort, int clientRtcpPort)
 			if(ret == 1) {
 				uint8_t buffer[videoCapture->getBufferSize()];
 				int resize = videoCapture->read((char*)buffer, sizeof(buffer));
-				int frameSize = encoder->encode(buffer, resize, h264_buf);
 
-				if (resize == -1) {
+                if (format == "MJPEG") {
+                    deCompress->tjpeg2yuv(buffer, resize, &yuv_buf, &yuv_size);
+                    frameSize = encoder->encode(yuv_buf, yuv_size, h264_buf, format);
+                    free(yuv_buf);
+                } else if (format == "YUY2") {
+                    frameSize = encoder->encode(buffer, resize, h264_buf, format);
+                }
+
+                if (resize == -1) {
 					LOG(NOTICE, "stop %s", strerror(errno));
 				} else {
 					if (rtp->startCode3((char *)h264_buf))

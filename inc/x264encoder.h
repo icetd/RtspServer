@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <x264.h>
 #include <stdio.h>
+#include <string>
 
 
 
@@ -15,7 +16,7 @@ public:
 	virtual ~X264Encoder();
 	
 	int initialize();
-	int encode(uint8_t *inbuf, int insize, uint8_t *outbuf);
+	int encode(uint8_t *inbuf, int insize, uint8_t *outbuf, std::string &format);
 
 private:
 	int m_width;
