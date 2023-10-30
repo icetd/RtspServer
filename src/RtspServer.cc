@@ -41,14 +41,14 @@ int RtspServer::handleCmd_DESCRIBE(char *result, int cseq, char *url)
 			"a=rtpmap:96 H264/90000\r\n"
 			"a=control:track0\r\n",
 			time(NULL), localIp);
-	
+
 	sprintf(result, "RTSP/1.0 200 OK\r\nCSeq: %d\r\n"
 			"Content-Base: %s\r\n"
 			"Content-type: application/sdp\r\n"
 			"Content-length: %zu\r\n\r\n"
 			"%s",
 			cseq, url, strlen(sdp), sdp);
-	
+
 	return 0;
 }
 
@@ -95,35 +95,35 @@ void RtspServer::play(char *deviceName, int clientRtpPort, int clientRtcpPort)
 {
 	const char *in_devname = deviceName;
 	v4l2IoType ioTypeIn  = IOTYPE_MMAP;
-    std::list<uint32_t> formatList;
-    int width;
+	std::list<uint32_t> formatList;
+	int width;
 	int height;
 	int fps;
-    std::string format;
-    int frameSize;
+	std::string format;
+	int frameSize;
 
-    INIReader configs("./configs/config.ini");
-    if (configs.ParseError() < 0) {
-        LOG(ERROR, "read config failed.");
-        return;
-    } else {
-        width = configs.GetInteger("video", "width", 640);
-        height = configs.GetInteger("video", "height", 480);
-        fps = configs.GetInteger("video", "fps", 30);
-        format = configs.Get("video", "format", "UNKNOWN");
-        if (format == "YUY2") {
-            formatList.push_back(V4L2_PIX_FMT_YUYV);
-        } else if (format == "MJPEG") {
-            formatList.push_back(V4L2_PIX_FMT_MJPEG);
-        }
-    }
+	INIReader configs("./configs/config.ini");
+	if (configs.ParseError() < 0) {
+		LOG(ERROR, "read config failed.");
+		return;
+	} else {
+		width = configs.GetInteger("video", "width", 640);
+		height = configs.GetInteger("video", "height", 480);
+		fps = configs.GetInteger("video", "fps", 30);
+		format = configs.Get("video", "format", "UNKNOWN");
+		if (format == "YUY2") {
+			formatList.push_back(V4L2_PIX_FMT_YUYV);
+		} else if (format == "MJPEG") {
+			formatList.push_back(V4L2_PIX_FMT_MJPEG);
+		}
+	}
 
-    V4L2DeviceParameters param(in_devname, formatList, width, height, fps, ioTypeIn, DEBUG);
-    V4l2Capture *videoCapture = V4l2Capture::create(param);
-    DeCompress *deCompress = new DeCompress();
+	V4L2DeviceParameters param(in_devname, formatList, width, height, fps, ioTypeIn, DEBUG);
+	V4l2Capture *videoCapture = V4l2Capture::create(param);
+	DeCompress *deCompress = new DeCompress();
 	X264Encoder *encoder = new X264Encoder(width, height, X264_CSP_I422);
-    uint8_t *yuv_buf;
-    int yuv_size;
+	uint8_t *yuv_buf;
+	int yuv_size;
 	uint8_t *h264_buf = (uint8_t*) malloc(videoCapture->getBufferSize());
 
 	char clientIp[50];
@@ -167,15 +167,15 @@ void RtspServer::play(char *deviceName, int clientRtpPort, int clientRtcpPort)
 				uint8_t buffer[videoCapture->getBufferSize()];
 				int resize = videoCapture->read((char*)buffer, sizeof(buffer));
 
-                if (format == "MJPEG") {
-                    deCompress->tjpeg2yuv(buffer, resize, &yuv_buf, &yuv_size);
-                    frameSize = encoder->encode(yuv_buf, yuv_size, h264_buf, format);
-                    free(yuv_buf);
-                } else if (format == "YUY2") {
-                    frameSize = encoder->encode(buffer, resize, h264_buf, format);
-                }
+				if (format == "MJPEG") {
+					deCompress->tjpeg2yuv(buffer, resize, &yuv_buf, &yuv_size);
+					frameSize = encoder->encode(yuv_buf, yuv_size, h264_buf, format);
+					free(yuv_buf);
+				} else if (format == "YUY2") {
+					frameSize = encoder->encode(buffer, resize, h264_buf, format);
+				}
 
-                if (resize == -1) {
+				if (resize == -1) {
 					LOG(NOTICE, "stop %s", strerror(errno));
 				} else {
 					if (rtp->startCode3((char *)h264_buf))
@@ -243,9 +243,9 @@ void RtspServer::run()
 
 		while(line) {
 			if (strstr(line, "OPTIONS") ||
-				strstr(line, "DESCRIBE") ||
-				strstr(line, "SETUP") ||
-				strstr(line, "PLAY")) {
+					strstr(line, "DESCRIBE") ||
+					strstr(line, "SETUP") ||
+					strstr(line, "PLAY")) {
 
 				if (sscanf(line, "%s %s %s\r\n", method, url, version) != 3) {
 					LOG(ERROR, "Connot parse request.");
@@ -256,13 +256,13 @@ void RtspServer::run()
 				}
 			} else if (!strncmp(line, "Transport:", strlen("Transport:"))) {
 				if(sscanf(line, "Transport: RTP/AVP/TCP;unicast;interleaved=%d-%d\r\n",
-					&clientRtpPort, &clientRtcpPort) != 2) {
+							&clientRtpPort, &clientRtcpPort) != 2) {
 					LOG(WARN, "Parse Transport RTP/AVP/TCP");
 				}
 			}
 			line = strtok(NULL, sep);
 		}
-		
+
 		if (!strcmp(method, "OPTIONS")) {
 			if (handleCmd_OPTIONS(sBuf, CSeq)) {
 				LOG(ERROR, "falied to handle options.");
@@ -289,28 +289,28 @@ void RtspServer::run()
 
 		LOG(INFO, "S-->C\nsBuf = %s", sBuf);
 		send(m_clientFd, sBuf, strlen(sBuf), 0);
-		
+
 		if (!strcmp(method, "PLAY")) {
-			
+
 			char temp;
 			sscanf(url, "%*[^o]%c%c", &temp, &devIndex);
 			LOG(NOTICE, "Device Index: video%c", devIndex);
-			
+
 			switch (devIndex) {
-			case '0': {
-				play((char *)"/dev/video0", clientRtcpPort, clientRtpPort);
-				goto exit;
-			}
-	
-			case '2': {
-				play((char *)"/dev/video2", clientRtcpPort, clientRtpPort);
-				goto exit;
+				case '0': {
+							  play((char *)"/dev/video0", clientRtcpPort, clientRtpPort);
+							  goto exit;
+						  }
+
+				case '2': {
+							  play((char *)"/dev/video2", clientRtcpPort, clientRtpPort);
+							  goto exit;
+						  }
+
+				default:
+						  break;
 			}
 
-			default:
-				  break;
-			}
-		
 		}
 
 		bzero(method, sizeof(method));
