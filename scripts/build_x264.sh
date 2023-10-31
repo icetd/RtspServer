@@ -14,7 +14,7 @@ then
 		&& tar -xf "${X264_SRC}.tar") || exit
 	rm -f "${X264_SRC}.tar"
 else
-	echo "allready build x264"
+	echo "already build x264"
 fi
 
 if [ ! -d "${X264_PREFIX}" ]
