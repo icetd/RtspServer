@@ -25,5 +25,5 @@ then
 	cd ${CURRENT_DIR}
 	(rm -rf "${X264_SRC_DIR}") || exit
 else
-	echo "already build 264"
+	echo "already build x264"
 fi
