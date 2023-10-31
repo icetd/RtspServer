@@ -21,7 +21,7 @@ if [ ! -d "${X264_PREFIX}" ]
 then
 	cd ${X264_SRC_DIR}
 	(./configure --enable-shared --prefix=${X264_PREFIX}) || exit
-	(make && make install) || exit
+	(make -j4 && make install) || exit
 	cd ${CURRENT_DIR}
 	(rm -rf "${X264_SRC_DIR}") || exit
 else
