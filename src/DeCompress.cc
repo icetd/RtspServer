@@ -22,7 +22,6 @@ int DeCompress::tjpeg2yuv(unsigned char *jpeg_buffer, int jpeg_size, unsigned ch
     int ret = 0;
     tjDecompressHeader3(m_handler, jpeg_buffer, jpeg_size, &width, &height, &subsample, &colorspace);
     LOG(INFO, "w: %d h: %d subsample: %d color: %d\n", width, height, 1, colorspace);
-    flags |= 0;
 
     yuv_type = subsample;
 
@@ -35,10 +34,11 @@ int DeCompress::tjpeg2yuv(unsigned char *jpeg_buffer, int jpeg_size, unsigned ch
     }
 
     ret = tjDecompressToYUV2(m_handler, jpeg_buffer, jpeg_size, *yuv_buffer, width,
-                             padding, height, flags);
+                             padding, height, TJFLAG_FASTDCT);
     if (ret < 0)
     {
-        LOG(ERROR,"compress to jpeg failed: %s\n", tjGetErrorStr());
+        LOG(INFO,"compress to jpeg failed: %s\n", tjGetErrorStr());
+		return -1;
     }
 
     return ret;

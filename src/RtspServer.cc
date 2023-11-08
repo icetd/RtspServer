@@ -168,9 +168,11 @@ void RtspServer::play(char *deviceName, int clientRtpPort, int clientRtcpPort)
 				int resize = videoCapture->read((char*)buffer, sizeof(buffer));
 
 				if (format == "MJPEG") {
-					deCompress->tjpeg2yuv(buffer, resize, &yuv_buf, &yuv_size);
-					frameSize = encoder->encode(yuv_buf, yuv_size, h264_buf, format);
-					free(yuv_buf);
+					ret = deCompress->tjpeg2yuv(buffer, resize, &yuv_buf, &yuv_size);
+					if (ret >= 0) {
+						frameSize = encoder->encode(yuv_buf, yuv_size, h264_buf, format);
+						free(yuv_buf);				
+					}
 				} else if (format == "YUY2") {
 					frameSize = encoder->encode(buffer, resize, h264_buf, format);
 				}
@@ -182,7 +184,7 @@ void RtspServer::play(char *deviceName, int clientRtpPort, int clientRtcpPort)
 						startCode = 3;
 					else 
 						startCode = 4;
-					frameSize -= startCode;
+					//frameSize -= startCode;
 					if (frameSize > 0) {
 						int re = rtp->rtpSendH264Frame(rtpPacket, m_clientFd, 
 								clientIp ,(char *)(h264_buf + startCode), frameSize);
